@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+
+    </head>
+    <body style = "background-color:#c3c3c3;">
+        <canvas id = "spcanvas" width="800" height="800" style = "background-color: #ffffff"></canvas>
+        <canvas id = "gap" width="150" height = "800" style = "background-color:#ffffff"></canvas>
+        <div id = "consoleTable" style = 'float:right;'>
+            Data: 
+            <span id = "currentName"></span><br>
+            <span>Data <input id = "w_loadName" type = "text"></input>
+            <button onclick = "g_functionhub.setFunc({type:'updateData'})">Load Data</button>
+            </span>
+            <br><br>
+            
+            <span>Class <input id = "label" type = "text"></input>
+             Number <input id = "pointNumber" type = "text" value = "10"></input>
+            <button onclick = "g_functionhub.setFunc({type:'generateDots'})">Generate Data </button>
+            <button onclick = "g_functionhub.setFunc({type:'clearDots'})">Clear Dots</button></span><br>
+            <span>Data Name <input id = "dataNameSave" type = "text"></input>
+            <button onclick = "g_functionhub.setFunc({type:'saveData'})">Save Data</button>
+            </span><br>
+            <button onclick = "g_functionhub.setFunc({type:'startServer'})">Start</button><br><br>
+
+            
+            <div>
+                <input type = 'range' id = "m_bandwith" min = '1' max = "150" value = '15'> Bandwith</input><br>
+                <input type = 'range' id = 'm_threshold' min = '0.01' max = '1' step = '0.01'value = '0.5'> Threshold</input>
+                <br>
+                <input type = 'range' id = 'm_clutter' min = '1' max = '150' step = '1' value = '25'> Clutter Radius</input>
+                <br>
+                <input type = 'range' id = 'm_outlierSize' min = '1' max = '5' step = '0.5' value = '2.5'> Outlier PointSize</input>
+                <br><br>
+            </div>
+
+            <div>
+                <input id = "scatterRender" type = "checkbox">Scatter </input>
+                <input id = "contourRender" type = "checkbox">Contour</input>
+                <input id = "kdeRender" type = "checkbox"> KDE </input>
+                <input id = "splatterplotRender" type = "checkbox"> Splatterplots </input><br><br>
+            </div>
+            <div>
+                <button onclick = "renderUpdate()">Update</button>
+            </div>
+        </div>
+
+        <script src = "d3.min.js"></script>
+        <script src = "paper.js"></script>
+        <script src="https://unpkg.com/d3-geo@1"></script>
+        <script src="https://unpkg.com/d3-interpolate@1"></script>
+        <script src = "https://unpkg.com/d3-contour@1"></script>
+        <script src = "jquery.js"></script>
+        <script src = "lurlquery.js"></script>
+        <!--<script src = "src/addContour.js"></script> -->
+        <script src = "src/canvasCircle.js"></script>
+        <script src = "src/drcanvas.js"></script>
+        <script src = "src/pointgenerator.js"></script>
+        <script src = "src/pointsaver.js"></script>
+        <script src = "src/kdeenhancer.js"></script>
+        <script src = "src/functionhub.js"></script>
+        
+        <script src = "src/pointlabel.js"></script>
+        <script src = ""></script>
+        <script src = ""></script>
+
+        <script>
+            var color = ['#fff7ec', "#C56321", "#063A15", '#C51111', "#511352", "#482106", "#B72A8C", "#757474", "#7B7401", '#08306b', "#013D57"]
+            console.log("color", color)
+            g_redDotColor = 'rgba(0,0,0,.3)'//'rgba(239,101,72,0.2)'//215,48,31,1)'
+            g_blueDotColor = 'rgba(0,0,0,.3)'//'rgba(78,179,211,0.2)'//33,113,181,1)'
+            g_scatterRender = true ;
+            g_kdeRender = false ;
+            g_contourRender = false ;
+            g_splatterplotRender = false ;
+            //g_originDotRender = true ;
+
+            g_bandwith = 15 ;
+            g_threshold = 0.5 ;
+            g_clutterRadius = 25 ;
+            g_outlierPointSize = 2.5 ;
+
+        </script>
+
+        <script>
+            //var g_canvas = document.getElementById("spcanvas")
+            var g_spDrawing = new SplatterplotDraw("spcanvas")
+            var g_functionhub = new FunctionHub()
+        /*
+            var v_bandwith = document.getElementById("m_bandwith")
+            var v_threshold = document.getElementById("m_threshold")
+            var v_clutter = document.getElementById("m_clutter")
+            var v_outlierSize = document.getElementById("m_outlierSize")
+            console.log(v_bandwith,' ',v_threshold,' ',v_clutter,'',v_outlierSize)
+        */
+        </script>
+
+        <script>
+            function renderUpdate(){
+                g_kdeRender = document.getElementById("kdeRender").checked ;
+                g_scatterRender = document.getElementById("scatterRender").checked ;
+                g_contourRender = document.getElementById("contourRender").checked ;
+                g_splatterplotRender = document.getElementById("splatterplotRender").checked ;
+
+                g_bandwith = document.getElementById("m_bandwith").value ;
+                g_threshold = document.getElementById("m_threshold").value ;
+                g_clutterRadius = document.getElementById("m_clutter").value ;
+                g_outlierPointSize = document.getElementById("m_outlierSize").value ;
+
+                g_spDrawing.render() ;  
+            }
+        </script>
+
+<!--        <script>
+            var b_canvas = d3.select("Canvas").call(d3.zoom().scaleExtent([1, 8]).on("zoom", zoom))
+            var ctx = b_canvas.node().getContext("2d")
+            var width = b_canvas.property("width")
+            var height = b_canvas.property("height")
+
+            var randomX = d3.randomNormal(width / 2, 80),
+                randomY = d3.randomNormal(height / 2, 80),
+                data = d3.range(2000).map(function(){
+                    return [randomX(),randomY()]
+                }) 
+
+            draw()
+
+            function zoom(){
+                var transform = d3.event.transform
+                ctx.save()
+                ctx.clearRect(0, 0, width, height)
+                ctx.translate(transform.x, transform.y)
+                ctx.scale(transform.k, transform.k)
+                draw()
+                ctx.restore()
+            }
+
+            function draw(){
+                var i = -1, n = data.length, d
+                ctx.beginPath()
+                while(++i < n){
+                    d = data[i]
+                    ctx.moveTo(d[0], d[1])
+                    ctx.arc(d[0], d[1], 2.5, 0, 2*Math.PI)
+                }
+                ctx.fill()
+                ctx.closePath()
+            }
+        </script>
+-->    
+    </body>
+</html>
+
+
+
+
+
+
